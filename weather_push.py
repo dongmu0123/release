@@ -7,7 +7,7 @@ from datetime import datetime
 # 这些值从 GitHub Secrets 或环境变量读取
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN", "189669d152b74e6288eb4274904079df")       # PushPlus Token
 CITY = os.environ.get("CITY", "成都")                        # 城市名
-CUSTOM_TEXT = os.environ.get("CUSTOM_TEXT", "今天也要开心鸭！") # 每日自定义文字
+CUSTOM_TEXT = os.environ.get("CUSTOM_TEXT", "今天也要开心！") # 每日自定义文字
 TOPIC = os.environ.get("TOPIC", "")                              # 群组编码（向别人推送时需要）
 # ==================================
 
