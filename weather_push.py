@@ -1,0 +1,130 @@
+import requests
+import json
+import os
+from datetime import datetime
+
+# ============ 配置区域 ============
+# 这些值从 GitHub Secrets 或环境变量读取
+PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN", "189669d152b74e6288eb4274904079df")       # PushPlus Token
+CITY = os.environ.get("CITY", "成都")                        # 城市名
+CUSTOM_TEXT = os.environ.get("CUSTOM_TEXT", "今天也要开心鸭！") # 每日自定义文字
+TOPIC = os.environ.get("TOPIC", "")                              # 群组编码（向别人推送时需要）
+# ==================================
+
+
+def get_weather(city):
+    """从 wttr.in 获取天气数据（免费，无需API Key）"""
+    url = f"https://wttr.in/{city}?format=j1&lang=zh"
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+
+    # 当前天气
+    current = data["current_condition"][0]
+    temp = current["temp_C"]
+    feels_like = current["FeelsLikeC"]
+    humidity = current["humidity"]
+    wind_speed = current["windspeedKmph"]
+    # wttr.in 中文天气描述在 lang_zh 字段
+    weather_desc = current.get("lang_zh", [{}])
+    if isinstance(weather_desc, list) and weather_desc:
+        weather_desc = weather_desc[0].get("value", current["weatherDesc"][0]["value"])
+    else:
+        weather_desc = current["weatherDesc"][0]["value"]
+
+    # 今日预报
+    today_forecast = data["weather"][0]
+    max_temp = today_forecast["maxtempC"]
+    min_temp = today_forecast["mintempC"]
+
+    # 日出日落
+    astronomy = today_forecast.get("astronomy", [{}])[0]
+    sunrise = astronomy.get("sunrise", "N/A")
+    sunset = astronomy.get("sunset", "N/A")
+
+    return {
+        "temp": temp,
+        "feels_like": feels_like,
+        "humidity": humidity,
+        "wind_speed": wind_speed,
+        "weather_desc": weather_desc,
+        "max_temp": max_temp,
+        "min_temp": min_temp,
+        "sunrise": sunrise,
+        "sunset": sunset,
+    }
+
+
+def build_message(city, weather, custom_text):
+    """构建推送消息内容（HTML格式）"""
+    today = datetime.now().strftime("%Y年%m月%d日 %A")
+    weekday_map = {
+        "Monday": "星期一", "Tuesday": "星期二", "Wednesday": "星期三",
+        "Thursday": "星期四", "Friday": "星期五", "Saturday": "星期六", "Sunday": "星期日"
+    }
+    for en, zh in weekday_map.items():
+        today = today.replace(en, zh)
+
+    html = f"""
+    <div style="font-family: 'Microsoft YaHei', sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+        <h2 style="text-align:center; color:#333;">🌤 {city} 今日天气</h2>
+        <p style="text-align:center; color:#888; font-size:14px;">{today}</p>
+        <hr style="border: none; border-top: 1px solid #eee;">
+        <table style="width:100%; font-size:15px; line-height:2;">
+            <tr><td>🌡 当前温度</td><td style="text-align:right;"><b>{weather['temp']}°C</b></td></tr>
+            <tr><td>🤔 体感温度</td><td style="text-align:right;">{weather['feels_like']}°C</td></tr>
+            <tr><td>📊 今日温度</td><td style="text-align:right;">{weather['min_temp']}°C ~ {weather['max_temp']}°C</td></tr>
+            <tr><td>☁ 天气状况</td><td style="text-align:right;">{weather['weather_desc']}</td></tr>
+            <tr><td>💧 湿度</td><td style="text-align:right;">{weather['humidity']}%</td></tr>
+            <tr><td>🌬 风速</td><td style="text-align:right;">{weather['wind_speed']} km/h</td></tr>
+            <tr><td>🌅 日出</td><td style="text-align:right;">{weather['sunrise']}</td></tr>
+            <tr><td>🌇 日落</td><td style="text-align:right;">{weather['sunset']}</td></tr>
+        </table>
+        <hr style="border: none; border-top: 1px solid #eee;">
+        <div style="text-align:center; margin-top:15px; padding:15px; background:#f0f8ff; border-radius:10px;">
+            <p style="font-size:16px; color:#e74c3c; margin:0;">💌 {custom_text}</p>
+        </div>
+    </div>
+    """
+    return html
+
+
+def push_to_wechat(token, title, content):
+    """通过 PushPlus 推送消息到微信"""
+    url = "https://www.pushplus.plus/send"
+    payload = {
+        "token": token,
+        "title": title,
+        "content": content,
+        "template": "html",
+    }
+    if TOPIC:
+        payload["topic"] = TOPIC
+    resp = requests.post(url, json=payload, timeout=10)
+    result = resp.json()
+    if result.get("code") == 200:
+        print(f"✅ 推送成功！消息ID: {result.get('data')}")
+    else:
+        print(f"❌ 推送失败: {result.get('msg')}")
+        raise Exception(f"PushPlus error: {result.get('msg')}")
+
+
+def main():
+    if not PUSHPLUS_TOKEN:
+        print("❌ 请设置 PUSHPLUS_TOKEN 环境变量")
+        return
+
+    print(f"📍 城市: {CITY}")
+    print(f"📝 自定义文字: {CUSTOM_TEXT}")
+
+    weather = get_weather(CITY)
+    print(f"🌡 当前温度: {weather['temp']}°C, {weather['weather_desc']}")
+
+    content = build_message(CITY, weather, CUSTOM_TEXT)
+    title = f"🌤 {CITY}今日天气 | {weather['temp']}°C {weather['weather_desc']}"
+
+    push_to_wechat(PUSHPLUS_TOKEN, title, content)
+
+
+if __name__ == "__main__":
+    main()
