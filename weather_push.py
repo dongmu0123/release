@@ -42,6 +42,14 @@ def get_weather(city):
     sunrise = astronomy.get("sunrise", "N/A")
     sunset = astronomy.get("sunset", "N/A")
 
+    # 降雨概率（取全天最高值）和紫外线指数
+    hourly = today_forecast.get("hourly", [])
+    rain_chance = 0
+    uv_index = 0
+    for h in hourly:
+        rain_chance = max(rain_chance, int(h.get("chanceofrain", 0)))
+        uv_index = max(uv_index, int(h.get("uvIndex", 0)))
+
     return {
         "temp": temp,
         "feels_like": feels_like,
@@ -52,7 +60,54 @@ def get_weather(city):
         "min_temp": min_temp,
         "sunrise": sunrise,
         "sunset": sunset,
+        "rain_chance": rain_chance,
+        "uv_index": uv_index,
     }
+
+
+def get_life_tips(weather):
+    """根据天气生成穿衣、带伞、防晒建议"""
+    feels = int(weather["feels_like"])
+    rain = weather["rain_chance"]
+    uv = weather["uv_index"]
+
+    # 穿衣建议
+    if feels >= 33:
+        clothing = "很热！穿短袖短裤、裙子，注意防暑"
+    elif feels >= 28:
+        clothing = "天气炎热，穿轻薄透气的衣服"
+    elif feels >= 23:
+        clothing = "温暖舒适，穿T恤、薄衬衫即可"
+    elif feels >= 18:
+        clothing = "微凉，建议穿长袖或薄外套"
+    elif feels >= 12:
+        clothing = "有点冷，穿外套或卫衣"
+    elif feels >= 5:
+        clothing = "挺冷的，穿厚外套、毛衣"
+    else:
+        clothing = "非常冷！穿羽绒服、围巾、手套"
+
+    # 带伞建议
+    if rain >= 70:
+        umbrella = "降雨概率很高，一定要带伞！"
+    elif rain >= 40:
+        umbrella = "可能会下雨，建议带把伞"
+    elif rain >= 20:
+        umbrella = "有小概率降雨，可以备一把伞"
+    else:
+        umbrella = "不用带伞，放心出门"
+
+    # 防晒建议
+    if uv >= 8:
+        sunscreen = "紫外线很强！一定要涂防晒霜，戴帽子和墨镜"
+    elif uv >= 6:
+        sunscreen = "紫外线较强，记得涂防晒霜"
+    elif uv >= 3:
+        sunscreen = "紫外线中等，建议涂防晒"
+    else:
+        sunscreen = "紫外线较弱，可以不涂防晒"
+
+    return clothing, umbrella, sunscreen
 
 
 def build_message(city, weather, custom_text):
@@ -64,6 +119,8 @@ def build_message(city, weather, custom_text):
     }
     for en, zh in weekday_map.items():
         today = today.replace(en, zh)
+
+    clothing, umbrella, sunscreen = get_life_tips(weather)
 
     html = f"""
     <div style="font-family: 'Microsoft YaHei', sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
@@ -77,9 +134,17 @@ def build_message(city, weather, custom_text):
             <tr><td>☁ 天气状况</td><td style="text-align:right;">{weather['weather_desc']}</td></tr>
             <tr><td>💧 湿度</td><td style="text-align:right;">{weather['humidity']}%</td></tr>
             <tr><td>🌬 风速</td><td style="text-align:right;">{weather['wind_speed']} km/h</td></tr>
+            <tr><td>🌂 降雨概率</td><td style="text-align:right;">{weather['rain_chance']}%</td></tr>
+            <tr><td>☀ 紫外线指数</td><td style="text-align:right;">{weather['uv_index']}</td></tr>
             <tr><td>🌅 日出</td><td style="text-align:right;">{weather['sunrise']}</td></tr>
             <tr><td>🌇 日落</td><td style="text-align:right;">{weather['sunset']}</td></tr>
         </table>
+        <hr style="border: none; border-top: 1px solid #eee;">
+        <div style="margin-top:15px; padding:15px; background:#fff8f0; border-radius:10px; font-size:14px; line-height:1.8;">
+            <p style="margin:5px 0;">👗 <b>穿衣：</b>{clothing}</p>
+            <p style="margin:5px 0;">🌂 <b>带伞：</b>{umbrella}</p>
+            <p style="margin:5px 0;">🧴 <b>防晒：</b>{sunscreen}</p>
+        </div>
         <hr style="border: none; border-top: 1px solid #eee;">
         <div style="text-align:center; margin-top:15px; padding:15px; background:#f0f8ff; border-radius:10px;">
             <p style="font-size:16px; color:#e74c3c; margin:0;">💌 {custom_text}</p>
