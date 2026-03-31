@@ -2,8 +2,8 @@ name: 每日天气推送
 
 on:
   schedule:
-    # 每天北京时间早上7:00推送（UTC 23:00 前一天）
-    - cron: '0 23 * * *'
+    # 目标北京时间早上7:00推送，提前6小时补偿GitHub Actions延迟（UTC 17:00）
+    - cron: '0 17 * * *'
   workflow_dispatch:  # 支持手动触发测试
 
 jobs:
