@@ -7,7 +7,8 @@ from urllib.parse import quote
 # ============ 配置区域 ============
 # 这些值从 GitHub Secrets 或环境变量读取
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN", "189669d152b74e6288eb4274904079df")       # PushPlus Token
-CITY = os.environ.get("CITY", "Dongguan")                    # 城市名
+CITY = os.environ.get("CITY", "Dongguan")                    # 城市名（用于API请求，建议英文）
+CITY_DISPLAY = os.environ.get("CITY_DISPLAY", "东莞")        # 城市显示名（用于消息展示）
 CUSTOM_TEXT = os.environ.get("CUSTOM_TEXT", "今天也要开心！") # 每日自定义文字
 TOPIC = os.environ.get("TOPIC", "")                              # 群组编码（向别人推送时需要）
 # ==================================
@@ -181,14 +182,14 @@ def main():
         print("❌ 请设置 PUSHPLUS_TOKEN 环境变量")
         return
 
-    print(f"📍 城市: {CITY}")
+    print(f"📍 城市: {CITY} (显示为: {CITY_DISPLAY})")
     print(f"📝 自定义文字: {CUSTOM_TEXT}")
 
     weather = get_weather(CITY)
     print(f"🌡 当前温度: {weather['temp']}°C, {weather['weather_desc']}")
 
-    content = build_message(CITY, weather, CUSTOM_TEXT)
-    title = f"🌤 {CITY}今日天气 | {weather['temp']}°C {weather['weather_desc']}"
+    content = build_message(CITY_DISPLAY, weather, CUSTOM_TEXT)
+    title = f"🌤 {CITY_DISPLAY}今日天气 | {weather['temp']}°C {weather['weather_desc']}"
 
     push_to_wechat(PUSHPLUS_TOKEN, title, content)
 

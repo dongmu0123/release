@@ -26,6 +26,7 @@ jobs:
         env:
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
           CITY: ${{ vars.CITY || 'Dongguan' }}
+          CITY_DISPLAY: ${{ vars.CITY_DISPLAY || '东莞' }}
           CUSTOM_TEXT: ${{ vars.CUSTOM_TEXT || '今天也要开心！' }}
           TOPIC: ${{ secrets.TOPIC }}
         run: python weather_push.py
