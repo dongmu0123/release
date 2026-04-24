@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(py --version)",
+      "Bash(\"/c/Users/32470/AppData/Local/Programs/Python/Python312/python.exe\" --version)",
+      "Bash(\"/c/Users/32470/AppData/Local/Programs/Python/Python313/python.exe\" --version)",
+      "Read(//c/Users/32470/AppData/Local/Programs/**)",
+      "Bash(where python:*)",
+      "Bash(ls /c/Python*)",
+      "Bash(\"/c/Users/32470/AppData/Local/Microsoft/WindowsApps/python.exe\" --version 2>&1)",
+      "Bash(gh auth:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

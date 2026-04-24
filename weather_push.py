@@ -28,12 +28,26 @@ def get_weather(city):
     feels_like = current["FeelsLikeC"]
     humidity = current["humidity"]
     wind_speed = current["windspeedKmph"]
-    # wttr.in 中文天气描述在 lang_zh 字段
-    weather_desc = current.get("lang_zh", [{}])
-    if isinstance(weather_desc, list) and weather_desc:
-        weather_desc = weather_desc[0].get("value", current["weatherDesc"][0]["value"])
-    else:
-        weather_desc = current["weatherDesc"][0]["value"]
+    # 天气描述：优先用本地映射表，避免 lang_zh 字段乱码
+    _desc_map = {
+        "Sunny": "晴天", "Clear": "晴朗", "Partly cloudy": "局部多云",
+        "Partly Cloudy": "局部多云", "Cloudy": "多云", "Overcast": "阴天",
+        "Mist": "薄雾", "Fog": "雾", "Freezing fog": "冻雾",
+        "Patchy rain possible": "局部可能有雨", "Patchy snow possible": "局部可能有雪",
+        "Blowing snow": "吹雪", "Blizzard": "暴风雪", "Thundery outbreaks possible": "可能有雷暴",
+        "Light rain": "小雨", "Moderate rain": "中雨", "Heavy rain": "大雨",
+        "Light rain shower": "小阵雨", "Moderate or heavy rain shower": "中到大阵雨",
+        "Torrential rain shower": "暴雨", "Light drizzle": "毛毛雨", "Freezing drizzle": "冻毛毛雨",
+        "Heavy freezing drizzle": "大冻毛毛雨", "Light sleet": "小雨夹雪", "Moderate or heavy sleet": "中到大雨夹雪",
+        "Light snow": "小雪", "Moderate snow": "中雪", "Heavy snow": "大雪",
+        "Light snow showers": "小阵雪", "Moderate or heavy snow showers": "中到大阵雪",
+        "Patchy light rain": "局部小雨", "Patchy light rain with thunder": "局部雷阵雨",
+        "Moderate or heavy rain with thunder": "雷雨", "Patchy light snow": "局部小雪",
+        "Patchy light snow with thunder": "局部雷雪", "Moderate or heavy snow with thunder": "雷雪",
+        "Ice pellets": "冰粒", "Light showers of ice pellets": "小冰粒阵", "Moderate or heavy showers of ice pellets": "中到大冰粒阵",
+    }
+    raw_desc = current["weatherDesc"][0]["value"]
+    weather_desc = _desc_map.get(raw_desc, raw_desc)
 
     # 今日预报
     today_forecast = data["weather"][0]
